@@ -65,15 +65,6 @@ STEPS
         run: |
           if [ -z "$INSIGHT_ENGINE_SECRET" ]; then
             echo "CRITICAL: INSIGHT_ENGINE_SECRET is not set. Aborting."
-            e\xit 1
-          fi
-
-  After:
-  ```yaml
-      - name: Validate required secrets
-        run: |
-          if [ -z "$INSIGHT_ENGINE_SECRET" ]; then
-            echo "CRITICAL: INSIGHT_ENGINE_SECRET is not set. Aborting."
             exit 1
           fi
           clean_secret=$(printf '%s' "$INSIGHT_ENGINE_SECRET" | tr -d '\r\n')
@@ -86,7 +77,9 @@ STEPS
           INSIGHT_ENGINE_SECRET: ${{ secrets.INSIGHT_ENGINE_SECRET }}
   ```
 
-  Rollback: Revert .github/workflows/deploy.yml.
+  Rollback:
+  If deploy.yml existed and was modified, revert .github/workflows/deploy.yml.
+  If deploy.yml did not exist, no rollback action.
 
   Validation:
   [ ] If deploy.yml exists, YAML parses successfully.
@@ -281,10 +274,11 @@ def real_startup_env(monkeypatch):
   [ ] pytest --collect-only succeeds after CP12.
 
 POST-EXECUTION VALIDATION
-[ ] deploy.yml parses as valid YAML.
-[ ] The secret validation step remains under the same steps list as the original block.
-[ ] The step exits non-zero when INSIGHT_ENGINE_SECRET is empty.
-[ ] The step exits non-zero when INSIGHT_ENGINE_SECRET is shorter than 32 bytes.
+[ ] If deploy.yml exists, deploy.yml parses as valid YAML.
+[ ] If deploy.yml exists, the secret validation step remains under the same steps list as the original block.
+[ ] If deploy.yml exists, the step exits non-zero when INSIGHT_ENGINE_SECRET is empty.
+[ ] If deploy.yml exists, the step exits non-zero when INSIGHT_ENGINE_SECRET is shorter than 32 bytes.
+[ ] If deploy.yml does not exist, deploy workflow validation is recorded as N/A.
 [ ] python3 -c "import tomllib; tomllib.load(open('pyproject.toml','rb'))" succeeds.
 [ ] pyproject.toml contains requires-python = ">=3.11".
 [ ] pyproject.toml contains exactly one [tool.pytest.ini_options] block.
