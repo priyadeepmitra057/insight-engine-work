@@ -31,11 +31,16 @@ STEPS
 
   STEP [11.1]
   File:           .github/workflows/deploy.yml
-  Action:         MODIFY
+  Action:         CONDITIONAL_MODIFY
   Source file:    passion_plan_part7.md
   Source section: 19. Infrastructure (deploy.yml)
   Block ID:       CB-P7-01
   Flags:          [SECURITY SENSITIVE]
+
+  Pre-condition:
+  [ ] If .github/workflows/deploy.yml does not exist, mark this step N/A and continue.
+  [ ] If it exists, apply the exact replacement below.
+  [ ] Do not create a new deploy workflow unless GitHub Actions deployment is intentionally used by this repository.
 
   Before:
   ```yaml
@@ -48,7 +53,20 @@ STEPS
           INSIGHT_ENGINE_SECRET: ${{ secrets.INSIGHT_ENGINE_SECRET }}
   ```
 
-  Instruction: Replace the exact literal code block above. If the exact Before block is not found exactly once, STOP. Do not infer the edit location. Add the secret validation step to the workflow verbatim.
+  Instruction:
+  If the file exists, replace the exact literal code block above.
+  If the file exists but the exact Before block is not found exactly once, STOP.
+  If the file does not exist, record:
+  "deploy.yml absent; deployment secret validation N/A for this repo."
+
+  After:
+  ```yaml
+      - name: Validate required secrets
+        run: |
+          if [ -z "$INSIGHT_ENGINE_SECRET" ]; then
+            echo "CRITICAL: INSIGHT_ENGINE_SECRET is not set. Aborting."
+            e\xit 1
+          fi
 
   After:
   ```yaml
@@ -70,13 +88,23 @@ STEPS
 
   Rollback: Revert .github/workflows/deploy.yml.
 
+  Validation:
+  [ ] If deploy.yml exists, YAML parses successfully.
+  [ ] If deploy.yml exists, the secret validation step remains under the same steps list.
+  [ ] If deploy.yml does not exist, final gate records deploy workflow secret validation as N/A, not failed.
+
   STEP [11.2]
   File:           pyproject.toml
-  Action:         MODIFY
+  Action:         CREATE_OR_MODIFY
   Source file:    passion_plan_part7.md
   Source section: 19. Infrastructure (pyproject.toml)
   Block ID:       CB-P7-02
   Flags:          NONE
+
+  Before:
+  ```text
+  FILE MAY OR MAY NOT EXIST
+  ```
 
   Instruction:
   If `pyproject.toml` does not exist:
@@ -144,27 +172,25 @@ scipy>=1.17,<2
 
   STEP [11.4]
   File:           tests/conftest.py
-  Action:         MODIFY
+  Action:         CREATE_OR_MODIFY
   Source file:    passion_plan_part7.md
   Source section: 19. Infrastructure (conftest.py)
   Block ID:       CB-P7-04
   Flags:          NONE
 
   Before:
-  ```python
-import pytest
-import os
-from log_utils import _reset_secret_cache
+  ```text
+  FILE MAY OR MAY NOT EXIST
+  ```
 
-@pytest.fixture(autouse=True)
-def _set_test_env():
-    """Force test environment."""
-    os.environ["ENV"] = "test"
-    os.environ["INSIGHT_ENGINE_SKIP_STARTUP_CHECKS"] = "true"
-    yield
-```
+  Instruction:
+  If tests/conftest.py does not exist:
+  - create tests/conftest.py with the full fixture content from the After block.
 
-  Instruction: Replace the exact literal code block above. If the exact Before block is not found exactly once, STOP. Do not infer the edit location. Add the verbatim test environment fixtures to `tests/conftest.py`. Session-scoped env fixture uses manual save/restore intentionally because monkeypatch is function-scoped. Function-scoped fixtures must use monkeypatch.
+  If tests/conftest.py exists:
+  - replace the exact literal old fixture block if found exactly once.
+  - if the file exists but the exact old fixture block is not found exactly once, STOP.
+  - do not merge fixtures manually.
 
   After:
   ```python
@@ -244,7 +270,15 @@ def real_startup_env(monkeypatch):
     yield
   ```
 
-  Rollback: Revert tests/conftest.py.
+  Rollback:
+  If file was newly created, delete tests/conftest.py.
+  If file existed, restore original tests/conftest.py.
+
+  Validation:
+  [ ] tests/conftest.py exists.
+  [ ] python3 -m py_compile tests/conftest.py succeeds.
+  [ ] pytest --version succeeds.
+  [ ] pytest --collect-only succeeds after CP12.
 
 POST-EXECUTION VALIDATION
 [ ] deploy.yml parses as valid YAML.

@@ -231,39 +231,18 @@ def safe_numeric(val: Any, default: float = 0.0, *, raise_on_invalid: bool = Fal
 
   STEP [7.2]
   File:           candidate.py
-  Action:         MODIFY
+  Action:         CREATE
   Source file:    passion_plan_part3.md
   Source section: 13. candidate.py
   Block ID:       CB-P3-03
   Flags:          NONE
 
   Before:
-  ```python
-from dataclasses import dataclass
-
-@dataclass(frozen=True, slots=True)
-class Candidate:
-    score: float
-    category: str
-    insight_type: str
-    merchant: str
-    amount: float
-    sort_key_ts: int
-
-    @classmethod
-    def subscription(cls, score: float, category: str, merchant: str,
-                     amount: float, sort_key_ts: int) -> "Candidate":
-        return cls(score=score, category=category, insight_type="subscription",
-                   merchant=merchant, amount=amount, sort_key_ts=sort_key_ts)
-
-    @classmethod
-    def spending_spike(cls, score: float, category: str, merchant: str,
-                       amount: float, sort_key_ts: int) -> "Candidate":
-        return cls(score=score, category=category, insight_type="spending_spike",
-                   merchant=merchant, amount=amount, sort_key_ts=sort_key_ts)
+  ```text
+  FILE DOES NOT EXIST
   ```
 
-  Instruction: Replace entire content of `candidate.py` with verbatim content.
+  Instruction: Create candidate.py with the provided verbatim content.
 
   After:
   ```python
@@ -429,7 +408,12 @@ class Candidate:
         )
   ```
 
-  Rollback: Restore original candidate.py.
+  Rollback: Delete candidate.py.
+
+  Validation:
+  [ ] candidate.py exists.
+  [ ] python3 -m py_compile candidate.py succeeds.
+  [ ] python3 -c "from candidate import Candidate; assert hasattr(Candidate, 'passion'); assert hasattr(Candidate, 'subscription'); assert hasattr(Candidate, 'spending_spike')" succeeds.
 
   STEP [7.3]
   File:           marketplace_subcategory.py
