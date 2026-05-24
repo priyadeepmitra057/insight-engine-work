@@ -101,7 +101,23 @@ STEPS
 
   Instruction:
   If `pyproject.toml` does not exist:
-  - create it with the full provided content below.
+  - create it with this full content:
+  ```toml
+  [project]
+  requires-python = ">=3.11"
+
+  [tool.pytest.ini_options]
+  log_cli_level = "INFO"
+  filterwarnings = [
+      # FIX 20: Do not globally error every UserWarning
+      "error::RuntimeWarning",
+      "default::DeprecationWarning",
+      "default::FutureWarning",
+      "default::PendingDeprecationWarning",
+      "ignore::RuntimeWarning:numpy",
+      "ignore::UserWarning:pandas",
+  ]
+  ```
 
   If `pyproject.toml` exists:
   - preserve all unrelated sections.
