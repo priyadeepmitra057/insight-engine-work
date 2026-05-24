@@ -31,11 +31,16 @@ STEPS
 
   STEP [11.1]
   File:           .github/workflows/deploy.yml
-  Action:         MODIFY
+  Action:         CONDITIONAL_MODIFY
   Source file:    passion_plan_part7.md
   Source section: 19. Infrastructure (deploy.yml)
   Block ID:       CB-P7-01
   Flags:          [SECURITY SENSITIVE]
+
+  Pre-condition:
+  [ ] If .github/workflows/deploy.yml does not exist, mark this step N/A and continue.
+  [ ] If it exists, apply the exact replacement below.
+  [ ] Do not create a new deploy workflow unless GitHub Actions deployment is intentionally used by this repository.
 
   Before:
   ```yaml
@@ -48,7 +53,11 @@ STEPS
           INSIGHT_ENGINE_SECRET: ${{ secrets.INSIGHT_ENGINE_SECRET }}
   ```
 
-  Instruction: Replace the exact literal code block above. If the exact Before block is not found exactly once, STOP. Do not infer the edit location. Add the secret validation step to the workflow verbatim.
+  Instruction:
+  If the file exists, replace the exact literal code block above.
+  If the file exists but the exact Before block is not found exactly once, STOP.
+  If the file does not exist, record:
+  "deploy.yml absent; deployment secret validation N/A for this repo."
 
   After:
   ```yaml
@@ -68,19 +77,47 @@ STEPS
           INSIGHT_ENGINE_SECRET: ${{ secrets.INSIGHT_ENGINE_SECRET }}
   ```
 
-  Rollback: Revert .github/workflows/deploy.yml.
+  Rollback:
+  If deploy.yml existed and was modified, revert .github/workflows/deploy.yml.
+  If deploy.yml did not exist, no rollback action.
+
+  Validation:
+  [ ] If deploy.yml exists, YAML parses successfully.
+  [ ] If deploy.yml exists, the secret validation step remains under the same steps list.
+  [ ] If deploy.yml does not exist, final gate records deploy workflow secret validation as N/A, not failed.
 
   STEP [11.2]
   File:           pyproject.toml
-  Action:         MODIFY
+  Action:         CREATE_OR_MODIFY
   Source file:    passion_plan_part7.md
   Source section: 19. Infrastructure (pyproject.toml)
   Block ID:       CB-P7-02
   Flags:          NONE
 
+  Before:
+  ```text
+  FILE MAY OR MAY NOT EXIST
+  ```
+
   Instruction:
   If `pyproject.toml` does not exist:
-  - create it with the full provided content below.
+  - create it with this full content:
+  ```toml
+  [project]
+  requires-python = ">=3.11"
+
+  [tool.pytest.ini_options]
+  log_cli_level = "INFO"
+  filterwarnings = [
+      # FIX 20: Do not globally error every UserWarning
+      "error::RuntimeWarning",
+      "default::DeprecationWarning",
+      "default::FutureWarning",
+      "default::PendingDeprecationWarning",
+      "ignore::RuntimeWarning:numpy",
+      "ignore::UserWarning:pandas",
+  ]
+  ```
 
   If `pyproject.toml` exists:
   - preserve all unrelated sections.
@@ -144,27 +181,25 @@ scipy>=1.17,<2
 
   STEP [11.4]
   File:           tests/conftest.py
-  Action:         MODIFY
+  Action:         CREATE_OR_MODIFY
   Source file:    passion_plan_part7.md
   Source section: 19. Infrastructure (conftest.py)
   Block ID:       CB-P7-04
   Flags:          NONE
 
   Before:
-  ```python
-import pytest
-import os
-from log_utils import _reset_secret_cache
+  ```text
+  FILE MAY OR MAY NOT EXIST
+  ```
 
-@pytest.fixture(autouse=True)
-def _set_test_env():
-    """Force test environment."""
-    os.environ["ENV"] = "test"
-    os.environ["INSIGHT_ENGINE_SKIP_STARTUP_CHECKS"] = "true"
-    yield
-```
+  Instruction:
+  If tests/conftest.py does not exist:
+  - create tests/conftest.py with the full fixture content from the After block.
 
-  Instruction: Replace the exact literal code block above. If the exact Before block is not found exactly once, STOP. Do not infer the edit location. Add the verbatim test environment fixtures to `tests/conftest.py`. Session-scoped env fixture uses manual save/restore intentionally because monkeypatch is function-scoped. Function-scoped fixtures must use monkeypatch.
+  If tests/conftest.py exists:
+  - replace the exact literal old fixture block if found exactly once.
+  - if the file exists but the exact old fixture block is not found exactly once, STOP.
+  - do not merge fixtures manually.
 
   After:
   ```python
@@ -244,13 +279,22 @@ def real_startup_env(monkeypatch):
     yield
   ```
 
-  Rollback: Revert tests/conftest.py.
+  Rollback:
+  If file was newly created, delete tests/conftest.py.
+  If file existed, restore original tests/conftest.py.
+
+  Validation:
+  [ ] tests/conftest.py exists.
+  [ ] python3 -m py_compile tests/conftest.py succeeds.
+  [ ] pytest --version succeeds.
+  [ ] pytest --collect-only succeeds after CP12.
 
 POST-EXECUTION VALIDATION
-[ ] deploy.yml parses as valid YAML.
-[ ] The secret validation step remains under the same steps list as the original block.
-[ ] The step exits non-zero when INSIGHT_ENGINE_SECRET is empty.
-[ ] The step exits non-zero when INSIGHT_ENGINE_SECRET is shorter than 32 bytes.
+[ ] If deploy.yml exists, deploy.yml parses as valid YAML.
+[ ] If deploy.yml exists, the secret validation step remains under the same steps list as the original block.
+[ ] If deploy.yml exists, the step exits non-zero when INSIGHT_ENGINE_SECRET is empty.
+[ ] If deploy.yml exists, the step exits non-zero when INSIGHT_ENGINE_SECRET is shorter than 32 bytes.
+[ ] If deploy.yml does not exist, deploy workflow validation is recorded as N/A.
 [ ] python3 -c "import tomllib; tomllib.load(open('pyproject.toml','rb'))" succeeds.
 [ ] pyproject.toml contains requires-python = ">=3.11".
 [ ] pyproject.toml contains exactly one [tool.pytest.ini_options] block.
