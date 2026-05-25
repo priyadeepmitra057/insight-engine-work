@@ -421,17 +421,30 @@ def _attach_passion_results(
 
   After:
   ```python
-    # Phase 7: Passion Engine (optional — errors are swallowed)
-    # FIX 15: Extract debits from result inside _attach_passion_results, no raw debits passed
-    result = _attach_passion_results(result)
+        result = PipelineResult(
+            debits=debits,
+            credits=credits,
+            insights=insights,
+            cat_pipeline=cat_pipeline,
+            spend_pipeline=spend_pipeline,
+            ranker_pipeline=ranker_pipeline,
+            global_mean=state.global_mean,
+            global_std=state.global_std,
+            stats_version=state.stats_version,
+            kp_config_hash=state.kp_config_hash,
+            personal_debits=debits.loc[spend_mask == False].copy(),
+            personal_credits=credits.loc[credits[Col.IS_KNOWN_PERSON].fillna(False)].copy()
+        )
 
-    # FIX 19: Support end-to-end testing of crash dumps with populated passion fields
-    import os as _os
-    if _os.environ.get("INSIGHT_ENGINE_CRASH_TEST", "false").lower() == "true":
-        raise ValueError("Simulated post-passion crash")
+        # Phase 7: Passion Engine (optional — errors are swallowed)
+        result = _attach_passion_results(result)
 
-    return result
-  ```
+        import os as _os
+        if _os.environ.get("INSIGHT_ENGINE_CRASH_TEST", "false").lower() == "true":
+            raise ValueError("Simulated post-passion crash")
+
+        return result
+    except Exception:
 
   Rollback: Revert `run_pipeline` end.
 
@@ -471,19 +484,29 @@ def _attach_passion_results(
 
   After:
   ```python
-    result = PipelineResult(
-        debits=debits,
-        credits=credits,
-        personal_debits=personal_debits,
-        personal_credits=personal_credits,
-        personal_summary=personal_summary,
-    )
+        result = PipelineResult(
+            debits=debits,
+            credits=credits,
+            insights=insights,
+            cat_pipeline=cat_pipeline,
+            spend_pipeline=spend_pipeline,
+            ranker_pipeline=ranker_pipeline,
+            global_mean=filtered_global_mean,
+            global_std=filtered_global_std,
+            raw_global_mean=raw_global_mean,
+            raw_global_std=raw_global_std,
+            stats_version=stats_version,
+            personal_summary=personal_summary,
+            transfer_patterns=personal_insights,
+            exclusion_stats=exclusion_stats,
+            kp_config_hash=current_hash,
+            personal_debits=debits.loc[personal_mask].copy(),
+            personal_credits=credits.loc[credits[Col.IS_KNOWN_PERSON].fillna(False)].copy()
+        )
 
-    # Phase 7: Passion Engine (optional — errors are swallowed)
-    # FIX 15: Extract debits from result inside _attach_passion_results, no raw debits passed
-    result = _attach_passion_results(result)
-    return result
-  ```
+        # Phase 7: Passion Engine (optional — errors are swallowed)
+        result = _attach_passion_results(result)
+        return result
   Important: If the live run_inference PipelineResult call contains additional keyword arguments, list every one explicitly. No placeholders are allowed.
 
   Rollback: Revert `run_inference` end.
@@ -511,6 +534,13 @@ def _attach_passion_results(
 
   After:
   ```python
+    except Exception:
+        logger.critical(
+            "An unhandled exception crashed the pipeline core execution.",
+            extra={"event_type": "pipeline_crash", "stage": "pipeline_core"},
+            exc_info=True
+        )
+
         if config.ENABLE_CRASH_DUMPS:
             try:
                 _passion_debits, _passion_insights, _passion_signals = _resolve_passion_crash_fields(
@@ -537,7 +567,8 @@ def _attach_passion_results(
                     extra={"event_type": "crash_dump_failed", "stage": "crash_handler"},
                     exc_info=True
                 )
-  ```
+
+        raise
 
   Rollback: Revert crash handler logic.
 
