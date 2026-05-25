@@ -150,8 +150,7 @@ def verify_merchant_token(token: str, merchant: str) -> bool:
 import hashlib
 
 def stable_hash(value: str) -> str:
-    """Produces a short, stable hash for masking PII in logs."""
-    return hashlib.sha256(value.encode("utf-8")).hexdigest()[:12]
+    return hashlib.sha256(str(value).encode()).hexdigest()[:12]
   ```
 
   Instruction: Replace entire content of `hash_utils.py` with verbatim content.
@@ -193,7 +192,7 @@ def stable_hash(value: str) -> str:
   Before:
   ```python
 from hash_utils import stable_hash
-import logging
+
 logger = logging.getLogger(__name__)
   ```
 
@@ -238,8 +237,8 @@ log_safe_merchant(identifier)
   Before:
   ```python
 from hash_utils import stable_hash
-# ... in test_pii_redaction_coverage ...
-    assert any(stable_hash("Netflix") in msg for msg in caplog.messages)
+
+from schema import Col
   ```
 
   Instruction: Update imports and the specific assertion verbatim.

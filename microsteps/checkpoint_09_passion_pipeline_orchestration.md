@@ -660,45 +660,63 @@ def process_pipeline(
   ```python
 @dataclass(frozen=True, kw_only=True)
 class PipelineResult:
-    # (fields defined in checkpoint 06)
   ```
 
-  Instruction: Add the verbatim D4 contract docstring to the `PipelineResult` class.
+  Instruction:
+  Find the exact class header above once.
+  Insert the D4 contract docstring immediately inside the class, as the first statement after the class line.
+  Do not replace fields.
+  Do not remove any existing fields or post_init logic.
+  If the class already has a docstring, replace only that docstring with the D4 contract.
+  If the class header is not found exactly once, STOP.
 
   After:
   ```python
 @dataclass(frozen=True, kw_only=True)
 class PipelineResult:
-    """
-    D4 — passion_debits vs debits Contract
-    ──────────────────────────────────────
-    result.debits:
-        Core pipeline output. Contains all ML-enriched columns produced by
-        run_pipeline / run_inference (predicted_category, insight_score,
-        is_anomaly, is_recurring, etc.). This field is NEVER mutated by the
-        passion sidecar. Downstream consumers that only need core ML output
-        should read result.debits.
+  """
+  D4 — passion_debits vs debits Contract
+  ──────────────────────────────────────
+  result.debits:
+      Core pipeline output. Contains all ML-enriched columns produced by
+      run_pipeline / run_inference (predicted_category, insight_score,
+      is_anomaly, is_recurring, etc.). This field is NEVER mutated by the
+      passion sidecar. Downstream consumers that only need core ML output
+      should read result.debits.
 
-    result.passion_debits:
-        # FIX-24: Update D4 wording to clarify passion_debits origin
-        passion_debits is produced by running the passion sidecar against
-        result.debits and returning a defensive-copy DataFrame with the
-        same rows plus passion-owned columns added:
-          - Col.INFERRED_SUBCATEGORY ("inferred_subcategory")
-          - Col.SUBCATEGORY_CONFIDENCE ("subcategory_confidence")
-        Populated only when INSIGHT_ENGINE_PASSION_ENABLED=true and the
-        passion engine runs successfully. Defaults to empty DataFrame.
-        Downstream consumers needing subcategory enrichment MUST read
-        passion_debits, not debits.
+  result.passion_debits:
+      passion_debits is produced by running the passion sidecar against
+      result.debits and returning a defensive-copy DataFrame with the
+      same rows plus passion-owned columns added:
+        - Col.INFERRED_SUBCATEGORY ("inferred_subcategory")
+        - Col.SUBCATEGORY_CONFIDENCE ("subcategory_confidence")
+      Populated only when INSIGHT_ENGINE_PASSION_ENABLED=true and the
+      passion engine runs successfully. Defaults to empty DataFrame.
+      Downstream consumers needing subcategory enrichment MUST read
+      passion_debits, not debits.
 
-    DESIGN NOTE: If product requirements change to expect enriched subcategory
-    data in result.debits (not passion_debits), that is a deliberate design
-    change requiring a separate migration — it must NOT be done by mutating
-    result.debits inside _attach_passion_results.
-    """
+  DESIGN NOTE: If product requirements change to expect enriched subcategory
+  data in result.debits (not passion_debits), that is a deliberate design
+  change requiring a separate migration — it must NOT be done by mutating
+  result.debits inside _attach_passion_results.
+  """
   ```
 
-  Rollback: Restore original `PipelineResult` docstring.
+  Rollback:
+  Restore the previous PipelineResult docstring if one existed.
+  If no previous docstring existed, remove only the inserted D4 docstring.
+
+  Validation:
+  python3 -m py_compile pipeline.py
+  python3 - <<'PY'
+import inspect
+from pipeline import PipelineResult
+doc = inspect.getdoc(PipelineResult) or ""
+assert "D4" in doc
+assert "passion_debits" in doc
+assert "result.debits" in doc
+print("PipelineResult D4 docstring validation passed")
+PY
 
 POST-EXECUTION VALIDATION
 [ ] `passion_pipeline.py` exists.

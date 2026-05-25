@@ -19,6 +19,9 @@ Conflict: `tests/test_passion_engine.py` is mentioned as receiving B5 tests in P
 Decision: The version in Part 7/8 is authoritative and supersedes any earlier mentions of tests for this file. Part 1's B5 tests are integrated into the final authoritative suite in Part 8.
 STATUS: RESOLVED (Authoritative version in P7/P8 to be used).
 
+NOTE:
+CB-P1-14 is intentionally not a standalone execution block. The B5 TIP_CORPUS generic-prefix tests are subsumed into the authoritative tests/test_passion_engine.py suite implemented by CB-P7-05 and CB-P8-01.
+
 ## 0.3 Detect Plan Gaps
 [PLAN GAP #1]
 Missing: Explicit conversion of all `PipelineResult` calls to keyword-only.
@@ -43,7 +46,7 @@ STATUS: RESOLVED (Executor will follow Part 2 Audit Table).
 | CB-P1-11 | Part 1 | 7a. config.py — TIP_CORPUS Schema Migration | config.py | TIP_CORPUS / SPECIFIC_MERCHANT_ALIASES |
 | CB-P1-12 | Part 1 | 7b. insight_generator.py — TIP_CORPUS Import Migration | insight_generator.py | Imports |
 | CB-P1-13 | Part 1 | 7b. insight_generator.py — TIP_CORPUS Import Migration | insight_generator.py | TIP_CORPUS access |
-| CB-P1-14 | Part 1 | B5 — TIP_CORPUS Generic Prefix Tests | tests/test_passion_engine.py | TestTipCorpusGenericPrefix (Integrated in P8) |
+| CB-P2-00 | Part 2 | PipelineResult constructor keyword-only audit | pipeline.py, tests/test_phase3.py | AST validation for PipelineResult call sites |
 | CB-P2-01 | Part 2 | 9. pipeline.py PipelineResult Extension | pipeline.py | PipelineResult |
 | CB-P2-02 | Part 2 | 10. pipeline_result.py | pipeline_result.py | PassionResult |
 | CB-P3-01 | Part 3 | 11. passion_models.py | passion_models.py | PassionSignal |

@@ -400,8 +400,20 @@ def _attach_passion_results(
 
   Before:
   ```python
-        # return result
-        return result
+        return PipelineResult(
+            debits=debits,
+            credits=credits,
+            insights=insights,
+            cat_pipeline=cat_pipeline,
+            spend_pipeline=spend_pipeline,
+            ranker_pipeline=ranker_pipeline,
+            global_mean=state.global_mean,
+            global_std=state.global_std,
+            stats_version=state.stats_version,
+            kp_config_hash=state.kp_config_hash,
+            personal_debits=debits.loc[spend_mask == False].copy(),
+            personal_credits=credits.loc[credits[Col.IS_KNOWN_PERSON].fillna(False)].copy()
+        )
     except Exception:
   ```
 
@@ -437,9 +449,21 @@ def _attach_passion_results(
         return PipelineResult(
             debits=debits,
             credits=credits,
-            personal_debits=personal_debits,
-            personal_credits=personal_credits,
-            personal_summary=personal_summary
+            insights=insights,
+            cat_pipeline=cat_pipeline,
+            spend_pipeline=spend_pipeline,
+            ranker_pipeline=ranker_pipeline,
+            global_mean=filtered_global_mean,
+            global_std=filtered_global_std,
+            raw_global_mean=raw_global_mean,
+            raw_global_std=raw_global_std,
+            stats_version=stats_version,
+            personal_summary=personal_summary,
+            transfer_patterns=personal_insights,
+            exclusion_stats=exclusion_stats,
+            kp_config_hash=current_hash,
+            personal_debits=debits.loc[personal_mask].copy(),
+            personal_credits=credits.loc[credits[Col.IS_KNOWN_PERSON].fillna(False)].copy()
         )
   ```
 
@@ -475,23 +499,12 @@ def _attach_passion_results(
 
   Before:
   ```python
-        if config.ENABLE_CRASH_DUMPS:
-            try:
-                os.makedirs(config.CRASH_DUMP_DIR, exist_ok=True)
-                if debits is not None and isinstance(debits, pd.DataFrame) and not debits.empty:
-                    debits.head(1000).to_csv(os.path.join(config.CRASH_DUMP_DIR, f"{run_id}_debits.csv"), index=False)
-                if credits is not None and isinstance(credits, pd.DataFrame) and not credits.empty:
-                    credits.head(1000).to_csv(os.path.join(config.CRASH_DUMP_DIR, f"{run_id}_credits.csv"), index=False)
-                logger.info(
-                    "Crash state snapshots written.",
-                    extra={"event_type": "crash_dump_success", "stage": "crash_handler"}
-                )
-            except Exception:
-                logger.warning(
-                    "Failed to write state dump to CSV during crash handling sequence.",
-                    extra={"event_type": "crash_dump_failed", "stage": "crash_handler"},
-                    exc_info=True
-                )
+    except Exception:
+        logger.critical(
+            "An unhandled exception crashed the pipeline core execution.",
+            extra={"event_type": "pipeline_crash", "stage": "pipeline_core"},
+            exc_info=True
+        )
   ```
 
   Instruction: Replace the exact literal code block above. If the exact Before block is not found exactly once, STOP. Do not infer the edit location. Update the crash handler to use the new `_write_crash_dumps` helper and the `_resolve_passion_crash_fields` helper.

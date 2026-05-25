@@ -151,22 +151,25 @@ filterwarnings = [
 
   STEP [11.3]
   File:           requirements.txt
-  Action:         MODIFY
+  Action:         VERIFY_OR_MODIFY
   Source file:    passion_plan_part7.md
   Source section: 19. Infrastructure (requirements.txt)
   Block ID:       CB-P7-03
   Flags:          NONE
 
   Before:
-  ```text
-numpy>=1.24
-pandas>=2.1
-scikit-learn>=1.3
-lightgbm>=4.0
-scipy>=1.11
+  ```python
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+lightgbm>=4.0.0
+scipy>=1.14.0
   ```
 
-  Instruction: Replace dependencies with the specified versions verbatim.
+  Instruction:
+  If requirements.txt already contains the target dependency block exactly, mark Step 11.3 complete.
+  If it contains the old dependency block exactly once, replace it with the target dependency block.
+  If neither old nor target dependency block is found exactly once, STOP.
 
   After:
   ```text
