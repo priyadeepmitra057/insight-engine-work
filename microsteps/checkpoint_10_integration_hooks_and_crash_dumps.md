@@ -445,6 +445,7 @@ def _attach_passion_results(
 
         return result
     except Exception:
+  ```
 
   Rollback: Revert `run_pipeline` end.
 
@@ -507,6 +508,8 @@ def _attach_passion_results(
         # Phase 7: Passion Engine (optional — errors are swallowed)
         result = _attach_passion_results(result)
         return result
+  ```
+
   Important: If the live run_inference PipelineResult call contains additional keyword arguments, list every one explicitly. No placeholders are allowed.
 
   Rollback: Revert `run_inference` end.
@@ -569,6 +572,7 @@ def _attach_passion_results(
                 )
 
         raise
+  ```
 
   Rollback: Revert crash handler logic.
 
