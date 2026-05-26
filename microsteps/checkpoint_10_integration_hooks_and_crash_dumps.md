@@ -531,9 +531,70 @@ def _attach_passion_results(
             extra={"event_type": "pipeline_crash", "stage": "pipeline_core"},
             exc_info=True
         )
+
+        if config.ENABLE_CRASH_DUMPS:
+            try:
+                os.makedirs(config.CRASH_DUMP_DIR, exist_ok=True)
+
+                if debits is not None and not isinstance(debits, pd.DataFrame):
+                    logger.warning(
+                        "Unexpected type for debits: %s",
+                        type(debits).__name__,
+                        extra={"event_type": "data_corruption", "stage": "crash_handler"}
+                    )
+                safe_debits = debits.head(1000) if isinstance(debits, pd.DataFrame) else pd.DataFrame()
+
+                if credits is not None and not isinstance(credits, pd.DataFrame):
+                    logger.warning(
+                        "Unexpected type for credits: %s",
+                        type(credits).__name__,
+                        extra={"event_type": "data_corruption", "stage": "crash_handler"}
+                    )
+                safe_credits = credits.head(1000) if isinstance(credits, pd.DataFrame) else pd.DataFrame()
+
+                wrote_any = False
+
+                # Atomicity Note: Guaranteed on POSIX systems; best-effort on Windows.
+                if not safe_debits.empty:
+                    wrote_any = True
+                    tmp_path = os.path.join(config.CRASH_DUMP_DIR, f"{run_id}_debits.csv.tmp")
+                    final_path = os.path.join(config.CRASH_DUMP_DIR, f"{run_id}_debits.csv")
+                    safe_debits.to_csv(tmp_path, index=False)
+                    os.replace(tmp_path, final_path)
+
+                if not safe_credits.empty:
+                    wrote_any = True
+                    tmp_path = os.path.join(config.CRASH_DUMP_DIR, f"{run_id}_credits.csv.tmp")
+                    final_path = os.path.join(config.CRASH_DUMP_DIR, f"{run_id}_credits.csv")
+                    safe_credits.to_csv(tmp_path, index=False)
+                    os.replace(tmp_path, final_path)
+
+                if wrote_any:
+                    logger.info(
+                        "Crash state snapshots written.",
+                        extra={"event_type": "crash_dump_success", "stage": "crash_handler"}
+                    )
+                else:
+                    logger.info(
+                        "No crash data available to persist.",
+                        extra={"event_type": "crash_dump_empty", "stage": "crash_handler"}
+                    )
+
+            except Exception:
+                logger.warning(
+                    "Failed to write state dump to CSV during crash handling sequence.",
+                    extra={"event_type": "crash_dump_failed", "stage": "crash_handler"},
+                    exc_info=True
+                )
+
+        raise
   ```
 
-  Instruction: Replace the exact literal code block above. If the exact Before block is not found exactly once, STOP. Do not infer the edit location. Update the crash handler to use the new `_write_crash_dumps` helper and the `_resolve_passion_crash_fields` helper.
+  Instruction:
+  Replace the exact full current crash handler block in run_pipeline, beginning at `except Exception:` and ending at that handler's final `raise`, with the new crash handler block below.
+  If the full old handler block is not found exactly once, STOP.
+  Do not infer the edit location.
+  Do not leave any old crash-dump code below the replacement.
 
   After:
   ```python
@@ -575,6 +636,13 @@ def _attach_passion_results(
   ```
 
   Rollback: Revert crash handler logic.
+
+  Validation:
+  [ ] run_pipeline has exactly one except Exception: crash handler for the outer pipeline try/except.
+  [ ] Old inline crash dump writes are gone from run_pipeline.
+  [ ] run_pipeline crash handler calls _resolve_passion_crash_fields.
+  [ ] run_pipeline crash handler calls _write_crash_dumps.
+  [ ] python3 -m py_compile pipeline.py succeeds.
 
 POST-EXECUTION VALIDATION
 [ ] `pipeline.py` contains `_attach_passion_results` and `_write_crash_dumps`.
