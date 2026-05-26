@@ -30,18 +30,34 @@ STEPS
   Block ID:       CB-P7-05, CB-P8-01
   Flags:          NONE
 
-  Instruction: Create `tests/test_passion_engine.py` by concatenating the code from CB-P7-05 and CB-P8-01. Add explicit seam markers around the combined code.
+  Instruction:
+  Create tests/test_passion_engine.py by concatenating the actual extracted Python code from CB-P7-05 and CB-P8-01.
+  Add seam marker comments around each extracted section.
+  Do not paste placeholder text.
+  Do not paste angle-bracket scaffold text.
+  If CB-P7-05 or CB-P8-01 cannot be extracted exactly from the source plan files, STOP.
 
-  After:
+  Required final structure:
   ```python
-# BEGIN_CB_P7_05
-<verbatim code from CB-P7-05>
-# END_CB_P7_05
+  # BEGIN_CB_P7_05
+  # actual extracted Python code from CB-P7-05 goes here
+  # END_CB_P7_05
 
-# BEGIN_CB_P8_01
-<verbatim code from CB-P8-01>
-# END_CB_P8_01
+  # BEGIN_CB_P8_01
+  # actual extracted Python code from CB-P8-01 goes here
+  # END_CB_P8_01
   ```
+
+  Validation:
+  [ ] grep -n "<verbatim code from" tests/test_passion_engine.py returns no matches.
+  [ ] grep -n "actual extracted Python code" tests/test_passion_engine.py returns no matches.
+  [ ] python3 -m py_compile tests/test_passion_engine.py succeeds.
+  [ ] pytest --collect-only tests/test_passion_engine.py succeeds.
+  [ ] pytest tests/test_passion_engine.py passes all tests.
+
+  Rollback:
+  Delete tests/test_passion_engine.py if newly created.
+  If replacing an existing file, restore the previous version.
 
 POST-EXECUTION VALIDATION
 [ ] `grep -n "BEGIN_CB_P7_05" tests/test_passion_engine.py`

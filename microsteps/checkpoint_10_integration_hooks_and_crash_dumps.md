@@ -400,8 +400,20 @@ def _attach_passion_results(
 
   Before:
   ```python
-        # return result
-        return result
+        return PipelineResult(
+            debits=debits,
+            credits=credits,
+            insights=insights,
+            cat_pipeline=cat_pipeline,
+            spend_pipeline=spend_pipeline,
+            ranker_pipeline=ranker_pipeline,
+            global_mean=state.global_mean,
+            global_std=state.global_std,
+            stats_version=state.stats_version,
+            kp_config_hash=state.kp_config_hash,
+            personal_debits=debits.loc[spend_mask == False].copy(),
+            personal_credits=credits.loc[credits[Col.IS_KNOWN_PERSON].fillna(False)].copy()
+        )
     except Exception:
   ```
 
@@ -409,16 +421,30 @@ def _attach_passion_results(
 
   After:
   ```python
-    # Phase 7: Passion Engine (optional — errors are swallowed)
-    # FIX 15: Extract debits from result inside _attach_passion_results, no raw debits passed
-    result = _attach_passion_results(result)
+        result = PipelineResult(
+            debits=debits,
+            credits=credits,
+            insights=insights,
+            cat_pipeline=cat_pipeline,
+            spend_pipeline=spend_pipeline,
+            ranker_pipeline=ranker_pipeline,
+            global_mean=state.global_mean,
+            global_std=state.global_std,
+            stats_version=state.stats_version,
+            kp_config_hash=state.kp_config_hash,
+            personal_debits=debits.loc[spend_mask == False].copy(),
+            personal_credits=credits.loc[credits[Col.IS_KNOWN_PERSON].fillna(False)].copy()
+        )
 
-    # FIX 19: Support end-to-end testing of crash dumps with populated passion fields
-    import os as _os
-    if _os.environ.get("INSIGHT_ENGINE_CRASH_TEST", "false").lower() == "true":
-        raise ValueError("Simulated post-passion crash")
+        # Phase 7: Passion Engine (optional — errors are swallowed)
+        result = _attach_passion_results(result)
 
-    return result
+        import os as _os
+        if _os.environ.get("INSIGHT_ENGINE_CRASH_TEST", "false").lower() == "true":
+            raise ValueError("Simulated post-passion crash")
+
+        return result
+    except Exception:
   ```
 
   Rollback: Revert `run_pipeline` end.
@@ -437,9 +463,21 @@ def _attach_passion_results(
         return PipelineResult(
             debits=debits,
             credits=credits,
-            personal_debits=personal_debits,
-            personal_credits=personal_credits,
-            personal_summary=personal_summary
+            insights=insights,
+            cat_pipeline=cat_pipeline,
+            spend_pipeline=spend_pipeline,
+            ranker_pipeline=ranker_pipeline,
+            global_mean=filtered_global_mean,
+            global_std=filtered_global_std,
+            raw_global_mean=raw_global_mean,
+            raw_global_std=raw_global_std,
+            stats_version=stats_version,
+            personal_summary=personal_summary,
+            transfer_patterns=personal_insights,
+            exclusion_stats=exclusion_stats,
+            kp_config_hash=current_hash,
+            personal_debits=debits.loc[personal_mask].copy(),
+            personal_credits=credits.loc[credits[Col.IS_KNOWN_PERSON].fillna(False)].copy()
         )
   ```
 
@@ -447,19 +485,31 @@ def _attach_passion_results(
 
   After:
   ```python
-    result = PipelineResult(
-        debits=debits,
-        credits=credits,
-        personal_debits=personal_debits,
-        personal_credits=personal_credits,
-        personal_summary=personal_summary,
-    )
+        result = PipelineResult(
+            debits=debits,
+            credits=credits,
+            insights=insights,
+            cat_pipeline=cat_pipeline,
+            spend_pipeline=spend_pipeline,
+            ranker_pipeline=ranker_pipeline,
+            global_mean=filtered_global_mean,
+            global_std=filtered_global_std,
+            raw_global_mean=raw_global_mean,
+            raw_global_std=raw_global_std,
+            stats_version=stats_version,
+            personal_summary=personal_summary,
+            transfer_patterns=personal_insights,
+            exclusion_stats=exclusion_stats,
+            kp_config_hash=current_hash,
+            personal_debits=debits.loc[personal_mask].copy(),
+            personal_credits=credits.loc[credits[Col.IS_KNOWN_PERSON].fillna(False)].copy()
+        )
 
-    # Phase 7: Passion Engine (optional — errors are swallowed)
-    # FIX 15: Extract debits from result inside _attach_passion_results, no raw debits passed
-    result = _attach_passion_results(result)
-    return result
+        # Phase 7: Passion Engine (optional — errors are swallowed)
+        result = _attach_passion_results(result)
+        return result
   ```
+
   Important: If the live run_inference PipelineResult call contains additional keyword arguments, list every one explicitly. No placeholders are allowed.
 
   Rollback: Revert `run_inference` end.
@@ -475,29 +525,86 @@ def _attach_passion_results(
 
   Before:
   ```python
+    except Exception:
+        logger.critical(
+            "An unhandled exception crashed the pipeline core execution.",
+            extra={"event_type": "pipeline_crash", "stage": "pipeline_core"},
+            exc_info=True
+        )
+
         if config.ENABLE_CRASH_DUMPS:
             try:
                 os.makedirs(config.CRASH_DUMP_DIR, exist_ok=True)
-                if debits is not None and isinstance(debits, pd.DataFrame) and not debits.empty:
-                    debits.head(1000).to_csv(os.path.join(config.CRASH_DUMP_DIR, f"{run_id}_debits.csv"), index=False)
-                if credits is not None and isinstance(credits, pd.DataFrame) and not credits.empty:
-                    credits.head(1000).to_csv(os.path.join(config.CRASH_DUMP_DIR, f"{run_id}_credits.csv"), index=False)
-                logger.info(
-                    "Crash state snapshots written.",
-                    extra={"event_type": "crash_dump_success", "stage": "crash_handler"}
-                )
+
+                if debits is not None and not isinstance(debits, pd.DataFrame):
+                    logger.warning(
+                        "Unexpected type for debits: %s",
+                        type(debits).__name__,
+                        extra={"event_type": "data_corruption", "stage": "crash_handler"}
+                    )
+                safe_debits = debits.head(1000) if isinstance(debits, pd.DataFrame) else pd.DataFrame()
+
+                if credits is not None and not isinstance(credits, pd.DataFrame):
+                    logger.warning(
+                        "Unexpected type for credits: %s",
+                        type(credits).__name__,
+                        extra={"event_type": "data_corruption", "stage": "crash_handler"}
+                    )
+                safe_credits = credits.head(1000) if isinstance(credits, pd.DataFrame) else pd.DataFrame()
+
+                wrote_any = False
+
+                # Atomicity Note: Guaranteed on POSIX systems; best-effort on Windows.
+                if not safe_debits.empty:
+                    wrote_any = True
+                    tmp_path = os.path.join(config.CRASH_DUMP_DIR, f"{run_id}_debits.csv.tmp")
+                    final_path = os.path.join(config.CRASH_DUMP_DIR, f"{run_id}_debits.csv")
+                    safe_debits.to_csv(tmp_path, index=False)
+                    os.replace(tmp_path, final_path)
+
+                if not safe_credits.empty:
+                    wrote_any = True
+                    tmp_path = os.path.join(config.CRASH_DUMP_DIR, f"{run_id}_credits.csv.tmp")
+                    final_path = os.path.join(config.CRASH_DUMP_DIR, f"{run_id}_credits.csv")
+                    safe_credits.to_csv(tmp_path, index=False)
+                    os.replace(tmp_path, final_path)
+
+                if wrote_any:
+                    logger.info(
+                        "Crash state snapshots written.",
+                        extra={"event_type": "crash_dump_success", "stage": "crash_handler"}
+                    )
+                else:
+                    logger.info(
+                        "No crash data available to persist.",
+                        extra={"event_type": "crash_dump_empty", "stage": "crash_handler"}
+                    )
+
             except Exception:
                 logger.warning(
                     "Failed to write state dump to CSV during crash handling sequence.",
                     extra={"event_type": "crash_dump_failed", "stage": "crash_handler"},
                     exc_info=True
                 )
+
+        raise
   ```
 
-  Instruction: Replace the exact literal code block above. If the exact Before block is not found exactly once, STOP. Do not infer the edit location. Update the crash handler to use the new `_write_crash_dumps` helper and the `_resolve_passion_crash_fields` helper.
+  Instruction:
+  Replace the exact full current crash handler block in run_pipeline, beginning at `except Exception:` and ending at that handler's final `raise`, with the new crash handler block below.
+  If the full old handler block is not found exactly once, STOP.
+  Do not infer the edit location.
+  Do not leave any old crash-dump code below the replacement.
 
   After:
   ```python
+    except Exception:
+        logger.critical(
+            "An unhandled exception crashed the pipeline core execution.",
+            extra={"event_type": "pipeline_crash", "stage": "pipeline_core"},
+            exc_info=True
+        )
+
         if config.ENABLE_CRASH_DUMPS:
             try:
                 _passion_debits, _passion_insights, _passion_signals = _resolve_passion_crash_fields(
@@ -524,9 +631,18 @@ def _attach_passion_results(
                     extra={"event_type": "crash_dump_failed", "stage": "crash_handler"},
                     exc_info=True
                 )
+
+        raise
   ```
 
   Rollback: Revert crash handler logic.
+
+  Validation:
+  [ ] run_pipeline has exactly one except Exception: crash handler for the outer pipeline try/except.
+  [ ] Old inline crash dump writes are gone from run_pipeline.
+  [ ] run_pipeline crash handler calls _resolve_passion_crash_fields.
+  [ ] run_pipeline crash handler calls _write_crash_dumps.
+  [ ] python3 -m py_compile pipeline.py succeeds.
 
 POST-EXECUTION VALIDATION
 [ ] `pipeline.py` contains `_attach_passion_results` and `_write_crash_dumps`.

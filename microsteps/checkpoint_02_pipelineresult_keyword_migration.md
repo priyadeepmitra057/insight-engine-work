@@ -52,6 +52,15 @@ if bad:
 print("PipelineResult keyword-only call validation passed")
 PY
   ```
+  Rollback:
+  If the AST script passes without modifying files, no rollback action is required.
+  If manual refactoring was performed to convert PipelineResult positional calls to keyword-only calls, revert only those manual edits in pipeline.py and tests/test_phase3.py, then rerun the AST validation script.
+
+  Validation:
+  [ ] AST validation script passes.
+  [ ] pytest tests/test_phase3.py passes.
+
+
 
 POST-EXECUTION VALIDATION
 [ ] AST validation script passes.
