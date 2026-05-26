@@ -449,6 +449,7 @@ def _attach_passion_results(
   The outer run_pipeline crash handler is replaced only by STEP [10.5].
 
 
+
   Rollback: Revert `run_pipeline` end.
 
   STEP [10.4]
