@@ -52,6 +52,12 @@ skip re-freezing, and _validate_tip_corpus raises confusingly.
 """
 
 from types import MappingProxyType
+
+_GENERIC_TIP_PREFIX = "tip_generic_"
+
+def _is_generic_tip_id(tip_id: str) -> bool:
+    return str(tip_id).startswith(_GENERIC_TIP_PREFIX)
+
 # B4: Col is NOT re-exported. All callers must import Col directly from schema.
 from config import INSIGHT_TEMPLATES as _IT, TIP_CORPUS as _TC
 
@@ -105,7 +111,7 @@ def _freeze_tip_corpus(raw: dict | MappingProxyType) -> MappingProxyType:
                 raise TypeError(
                     f"TIP_CORPUS[{k!r}][{seq_key!r}] elements must be str, got {[type(x).__name__ for x in bad]}"
                 )
-        is_generic = k.startswith("generic_")
+        is_generic = _is_generic_tip_id(k)
         cats = tuple(c.strip().lower() for c in v["categories"])
         insights_tup = tuple(i.strip().lower() for i in v["insights"])
         # Fix 13: Validate lowercase-stripped values.
@@ -120,17 +126,17 @@ def _freeze_tip_corpus(raw: dict | MappingProxyType) -> MappingProxyType:
                     f"TIP_CORPUS[{k!r}] insight {ins!r} not in allowed set {sorted(_ALLOWED_INSIGHTS)}"
                 )
         # Fix 13: Non-generic tips cannot have empty categories or insights.
-        # B5: Empty-tuple wildcard is ONLY permitted for 'generic_*' tips.
+        # B5: Empty-tuple wildcard is ONLY permitted for 'tip_generic_*' tips.
         if not is_generic:
             if not cats:
                 raise ValueError(
                     f"TIP_CORPUS[{k!r}] has empty 'categories' but its tip_id does not start "
-                    f"with 'generic_'. Only 'generic_*' tips may use empty-tuple wildcard behavior."
+                    f"with 'tip_generic_'. Only 'tip_generic_*' tips may use empty-tuple wildcard behavior."
                 )
             if not insights_tup:
                 raise ValueError(
                     f"TIP_CORPUS[{k!r}] has empty 'insights' but its tip_id does not start "
-                    f"with 'generic_'. Only 'generic_*' tips may use empty-tuple wildcard behavior."
+                    f"with 'tip_generic_'. Only 'tip_generic_*' tips may use empty-tuple wildcard behavior."
                 )
             # Fix 13: Non-generic tips cannot contain "any" wildcard.
             if "any" in cats:
@@ -165,11 +171,11 @@ def lookup_matching_tip_ids(category: str, insight_type: str) -> list[str]:
         cats = tip_data.get("categories", ())
         types = tip_data.get("insights", ())
 
-        # B5: Empty-tuple wildcard is ONLY honoured for "generic_*" tips.
+        # B5: Empty-tuple wildcard is ONLY honoured for "tip_generic_*" tips.
         # Non-generic tips must have explicit category/insight lists (enforced
         # at startup by _freeze_tip_corpus) so the wildcard path here is
         # purely a runtime safety valve for generic tips that did pass validation.
-        is_generic = tip_id.startswith("generic_")
+        is_generic = _is_generic_tip_id(tip_id)
         cat_match = (cat_norm in cats) or ("any" in cats) or (is_generic and len(cats) == 0)
         type_match = (type_norm in types) or ("any" in types) or (is_generic and len(types) == 0)
 
@@ -460,6 +466,28 @@ def run_startup_checks(env: str | None = None) -> None:
   Rollback: Delete bootstrap.py.
 
 POST-EXECUTION VALIDATION
+[ ] python3 - <<'PY'
+from contracts import TIP_CORPUS, lookup_matching_tip_ids
+
+required = {
+    "tip_generic_spike_01",
+    "tip_generic_trend_01",
+    "tip_generic_budget_01",
+    "tip_generic_sub_01",
+}
+
+assert required <= set(TIP_CORPUS), required - set(TIP_CORPUS)
+
+for tip_id in required:
+    assert TIP_CORPUS[tip_id]["categories"] == (), tip_id
+
+assert "tip_generic_spike_01" in lookup_matching_tip_ids("food", "spending_spike")
+assert "tip_generic_trend_01" in lookup_matching_tip_ids("food", "trend_warning")
+assert "tip_generic_budget_01" in lookup_matching_tip_ids("shopping", "budget_risk")
+assert "tip_generic_sub_01" in lookup_matching_tip_ids("entertainment", "subscription")
+
+print("generic tip prefix validation passed")
+PY
 [ ] `contracts.py` exists.
 [ ] `bootstrap.py` exists.
 [ ] python3 -m py_compile contracts.py bootstrap.py succeeds.

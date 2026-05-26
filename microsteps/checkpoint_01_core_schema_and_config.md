@@ -44,7 +44,8 @@ STEPS
     INSIGHT_TYPE = "insight_type"
     TIP_ID = "tip_id"
     INSIGHT_SCORE = "insight_score"
-  ```
+
+```
 
   Instruction: Insert the two new constants after the `INSIGHT_SCORE` line.
 
@@ -264,7 +265,7 @@ TIP_CORPUS: dict[str, dict] = {
         "insights": ["subscription"],
     },
 }
-  ```
+```
 
   Instruction: Replace the exact literal code block above. If the exact Before block is not found exactly once, STOP. Do not infer the edit location.
   Migrate the existing TIP_CORPUS in place.
@@ -281,7 +282,7 @@ TIP_CORPUS: dict[str, dict] = {
   - Preserve every existing tip_id unless explicitly deprecated elsewhere.
   - Preserve every existing tip text.
   - Preserve every existing category and insight mapping.
-  - Generic wildcard tips may use empty categories/insights only if tip_id starts with "generic_".
+  - Generic wildcard tips may use empty categories/insights only if tip_id starts with "tip_generic_".
   - Non-generic tips must have non-empty categories and insights.
   - Do not introduce "any" wildcard for non-generic tips.
   - If any existing tip cannot be migrated mechanically, STOP and report the exact tip_id.

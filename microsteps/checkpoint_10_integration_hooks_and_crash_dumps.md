@@ -414,8 +414,7 @@ def _attach_passion_results(
             personal_debits=debits.loc[spend_mask == False].copy(),
             personal_credits=credits.loc[credits[Col.IS_KNOWN_PERSON].fillna(False)].copy()
         )
-    except Exception:
-  ```
+```
 
   Instruction: Apply the passion hook before the final return in `run_pipeline`. Ensure `PipelineResult` is assigned to `result` variable.
 
@@ -444,8 +443,11 @@ def _attach_passion_results(
             raise ValueError("Simulated post-passion crash")
 
         return result
-    except Exception:
   ```
+  Important:
+  Do not include `except Exception:` in this replacement.
+  The outer run_pipeline crash handler is replaced only by STEP [10.5].
+
 
   Rollback: Revert `run_pipeline` end.
 
@@ -479,7 +481,7 @@ def _attach_passion_results(
             personal_debits=debits.loc[personal_mask].copy(),
             personal_credits=credits.loc[credits[Col.IS_KNOWN_PERSON].fillna(False)].copy()
         )
-  ```
+```
 
   Instruction: Replace the exact literal code block above. If the exact Before block is not found exactly once, STOP. Do not infer the edit location. Assign the result to a variable and apply the passion hook.
 
@@ -588,7 +590,7 @@ def _attach_passion_results(
                 )
 
         raise
-  ```
+```
 
   Instruction:
   Replace the exact full current crash handler block in run_pipeline, beginning at `except Exception:` and ending at that handler's final `raise`, with the new crash handler block below.

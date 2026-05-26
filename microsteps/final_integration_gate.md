@@ -1,7 +1,8 @@
 # Phase 4: Final Integration Gate — Passion Detection Engine
 
 **Full system integration tests**
-- [ ] `pytest tests/test_passion_engine.py` passes all 174 tests.
+- [ ] `pytest tests/test_passion_engine.py` passes all collected tests.
+- [ ] `pytest --collect-only tests/test_passion_engine.py` succeeds and reports the expected collected test count for the embedded suite.
 - [ ] `pytest tests/test_phase1.py tests/test_phase2.py tests/test_phase3.py` all pass (regressions).
 - [ ] `python3 demo.py` runs without error (if applicable).
 - [ ] All ~30 files compile/load without error: `python3 -m compileall .`
@@ -17,11 +18,13 @@
 **Plan vs reality reconciliation**
 - [ ] `[PLAN CONFLICT #1]` → `test_passion_engine.py` Authoritative version deployed.
 - [ ] `[PLAN GAP #1]` → `PipelineResult` constructor calls audited and keyword-only.
-- [ ] Every block in Code Block Registry matches source planning file verbatim.
+- [ ] Every block in Code Block Registry matches its authoritative checkpoint/source block.
+- [ ] For CP12, tests/test_passion_engine.py matches the embedded Required final structure block in checkpoint_12_comprehensive_test_suite.md.
 
 **Code fidelity final audit**
 - [ ] Diff all introduced code against Code Block Registry.
-- [ ] Every block matches source planning file verbatim.
+- [ ] Every block matches its authoritative checkpoint/source block.
+- [ ] CP12 test-suite fidelity is checked against the embedded checkpoint block, not external passion_plan_part7.md or passion_plan_part8.md files.
 
 **Deployment readiness**
 - [ ] `INSIGHT_ENGINE_PASSION_ENABLED` kill switch verified (defaults to `false`).

@@ -658,7 +658,7 @@ def process_pipeline(
 
   Before:
   ```python
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True)
 class PipelineResult:
   ```
 

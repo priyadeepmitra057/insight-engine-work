@@ -164,7 +164,7 @@ numpy>=1.24.0
 scikit-learn>=1.3.0
 lightgbm>=4.0.0
 scipy>=1.14.0
-  ```
+```
 
   Instruction:
   If requirements.txt already contains the target dependency block exactly, mark Step 11.3 complete.
@@ -192,16 +192,17 @@ scipy>=1.17,<2
 
   Before:
   ```text
-  FILE MAY OR MAY NOT EXIST
-  ```
+FILE MAY OR MAY NOT EXIST
+```
 
   Instruction:
   If tests/conftest.py does not exist:
   - create tests/conftest.py with the full fixture content from the After block.
 
   If tests/conftest.py exists:
-  - replace the exact literal old fixture block if found exactly once.
-  - if the file exists but the exact old fixture block is not found exactly once, STOP.
+  - if this checkpoint intentionally owns the full tests/conftest.py file, replace the entire file with the full fixture content from the After block.
+  - if tests/conftest.py contains unrelated existing fixtures that must be preserved, STOP and replace this step with an exact old-fixture Before block from the live file.
+  - do not use requirements.txt dependency lines as a replacement anchor.
   - do not merge fixtures manually.
 
   After:
