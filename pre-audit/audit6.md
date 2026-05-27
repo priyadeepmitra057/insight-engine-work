@@ -4,7 +4,7 @@ Generated: 27/05/2026
 
 Plan files scanned: 8
 
-Codebase files scanned: 63
+Codebase files scanned: 64
 
 Checkpoint files scanned: 12
 
@@ -95,4 +95,5 @@ CHECKPOINT READINESS
 OVERALL VERDICT
 
 BLOCKED — 1 blockers must be resolved before execution
-                  list each blocker number here: 1
+                  list each blocker number here:
+                  1
