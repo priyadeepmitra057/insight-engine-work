@@ -388,8 +388,8 @@ __all__ = [
 
   Before:
   ```python
-from config import TIP_CORPUS
-  ```
+from config import TIP_CORPUS, INSIGHT_TEMPLATES, lookup_matching_tip_ids
+```
 
   Instruction: Replace the exact import above with:
 

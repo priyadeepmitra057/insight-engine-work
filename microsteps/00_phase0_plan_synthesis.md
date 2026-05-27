@@ -9,18 +9,18 @@
 6. Add specialized merchant resolution and subcategory enrichment for large marketplaces like Amazon and Flipkart.
 7. Orchestrate the passion pipeline with timing budget guards (`_StepBudgetGuard`) and cooperative hard timeouts.
 8. Wire the passion engine into `run_pipeline` and `run_inference` with a runtime kill switch and crash dump support.
-9. Deploy a 174-test regression and integration suite to ensure system stability and contract compliance.
+9. Deploy the complete passion engine regression and integration suite; final pass criteria are based on pytest collection and execution, not a hardcoded test count.
 10. Enforce defensive-copy integrity for all DataFrames to prevent unintended mutation across pipeline stages.
 
 ## 0.2 Detect Plan Conflicts
 [PLAN CONFLICT #1]
 Files involved: `passion_plan_part1.md`, `passion_plan_part7.md`, `passion_plan_part8.md`
 Conflict: `tests/test_passion_engine.py` is mentioned as receiving B5 tests in Part 1, but Part 7 explicitly states "The existing test_passion_engine.py file is completely replaced by this new suite" and provides a new implementation spanning Part 7 and Part 8.
-Decision: The version in Part 7/8 is authoritative and supersedes any earlier mentions of tests for this file. Part 1's B5 tests are integrated into the final authoritative suite in Part 8.
-STATUS: RESOLVED (Authoritative version in P7/P8 to be used).
+Decision: The CP12 embedded Required final structure block is the execution-authoritative version of tests/test_passion_engine.py. It preserves the final Part 7/8 suite content, but execution no longer depends on external passion_plan_part7.md or passion_plan_part8.md files.
+STATUS: RESOLVED (Authoritative CP12 embedded version to be used).
 
 NOTE:
-CB-P1-14 is intentionally not a standalone execution block. The B5 TIP_CORPUS generic-prefix tests are subsumed into the authoritative tests/test_passion_engine.py suite implemented by CB-P7-05 and CB-P8-01.
+CB-P1-14 is intentionally not a standalone execution block. The B5 TIP_CORPUS generic-prefix tests are subsumed into the CP12 embedded tests/test_passion_engine.py suite sections marked CB-P7-05 and CB-P8-01.
 
 ## 0.3 Detect Plan Gaps
 [PLAN GAP #1]
@@ -58,7 +58,7 @@ STATUS: RESOLVED (Executor will follow Part 2 Audit Table).
 | CB-P5-01 | Part 5 | 17. passion_pipeline.py | passion_pipeline.py | Module Level |
 | CB-P5-02 | Part 5 | pipeline.py — PipelineResult Contract (D4) | pipeline.py | PipelineResult Docstring |
 | CB-P6-01 | Part 6 | 18. pipeline.py — Integration Hook (Step 1) | pipeline.py | Imports |
-| CB-P6-02 | Part 6 | 18. pipeline.py — Integration Hook (Step 2) | pipeline.py | _write_crash_dumps |
+| CB-P6-02 | Part 6 | 18. pipeline.py — Integration Hook (Step 2) | pipeline.py | _write_crash_dumps / _resolve_passion_crash_fields |
 | CB-P6-03 | Part 6 | 18. pipeline.py — Integration Hook (Step 2) | pipeline.py | _attach_passion_results |
 | CB-P6-04 | Part 6 | 18. pipeline.py — Integration Hook (run_pipeline) | pipeline.py | run_pipeline hook |
 | CB-P6-05 | Part 6 | 18. pipeline.py — Integration Hook (run_inference) | pipeline.py | run_inference hook |

@@ -151,7 +151,7 @@ import hashlib
 
 def stable_hash(value: str) -> str:
     return hashlib.sha256(str(value).encode()).hexdigest()[:12]
-  ```
+```
 
   Instruction: Replace entire content of `hash_utils.py` with verbatim content.
 
@@ -194,7 +194,7 @@ def stable_hash(value: str) -> str:
 from hash_utils import stable_hash
 
 logger = logging.getLogger(__name__)
-  ```
+```
 
   Instruction: Update imports and logger as verbatim.
 
@@ -238,7 +238,9 @@ log_safe_merchant(identifier)
   Before:
   ```python
 from hash_utils import stable_hash
-  ```
+
+from schema import Col
+```
   After:
   ```python
 from log_utils import log_safe_merchant
@@ -258,8 +260,8 @@ from log_utils import log_safe_merchant
   Instruction: Update assertion in tests/test_logging_safety.py
   Before:
   ```python
-assert any(stable_hash("Netflix") in msg for msg in caplog.messages)
-  ```
+    assert any(stable_hash("Netflix") in msg for msg in caplog.messages)
+```
   After:
   ```python
 assert any(log_safe_merchant("Netflix") in msg for msg in caplog.messages)

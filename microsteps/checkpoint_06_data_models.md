@@ -272,7 +272,15 @@ class PipelineResult:
     passion_signals: tuple = field(default=())
     ```
 
-  - Append the new stats/passion validation block to the existing `__post_init__`. Do not replace existing code inside `__post_init__`, just append the following:
+  - Append only missing validation/copy logic to the existing `__post_init__`.
+    Do not duplicate any existing defensive-copy line for debits, credits, or personal_debits.
+    If an existing defensive-copy block already handles a field, preserve it and do not add a second copy for that field.
+    Always add handling for newly introduced fields:
+    stats
+    passion_debits
+    passion_insights
+    passion_signals
+    If the current `__post_init__` structure is unclear, STOP.
     ```python
         # New defensive copy logic:
         import pandas as pd
