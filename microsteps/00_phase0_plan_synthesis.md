@@ -58,7 +58,7 @@ STATUS: RESOLVED (Executor will follow Part 2 Audit Table).
 | CB-P5-01 | Part 5 | 17. passion_pipeline.py | passion_pipeline.py | Module Level |
 | CB-P5-02 | Part 5 | pipeline.py — PipelineResult Contract (D4) | pipeline.py | PipelineResult Docstring |
 | CB-P6-01 | Part 6 | 18. pipeline.py — Integration Hook (Step 1) | pipeline.py | Imports |
-| CB-P6-02 | Part 6 | 18. pipeline.py — Integration Hook (Step 2) | pipeline.py | _write_crash_dumps |
+| CB-P6-02 | Part 6 | 18. pipeline.py — Integration Hook (Step 2) | pipeline.py | _write_crash_dumps / _resolve_passion_crash_fields |
 | CB-P6-03 | Part 6 | 18. pipeline.py — Integration Hook (Step 2) | pipeline.py | _attach_passion_results |
 | CB-P6-04 | Part 6 | 18. pipeline.py — Integration Hook (run_pipeline) | pipeline.py | run_pipeline hook |
 | CB-P6-05 | Part 6 | 18. pipeline.py — Integration Hook (run_inference) | pipeline.py | run_inference hook |

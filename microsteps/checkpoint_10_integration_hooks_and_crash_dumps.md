@@ -610,9 +610,10 @@ def _attach_passion_results(
 
         if config.ENABLE_CRASH_DUMPS:
             try:
+                _snapshot = dict(locals())
                 _passion_debits, _passion_insights, _passion_signals = _resolve_passion_crash_fields(
-                    result=locals().get("result"),
-                    locals_snapshot=dict(locals()),
+                    result=_snapshot.get("result"),
+                    locals_snapshot=_snapshot,
                 )
 
                 _write_crash_dumps(

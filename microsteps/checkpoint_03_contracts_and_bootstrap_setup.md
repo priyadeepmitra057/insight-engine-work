@@ -52,6 +52,12 @@ skip re-freezing, and _validate_tip_corpus raises confusingly.
 """
 
 from types import MappingProxyType
+
+_GENERIC_TIP_PREFIX = "tip_generic_"
+
+def _is_generic_tip_id(tip_id: str) -> bool:
+    return str(tip_id).startswith(_GENERIC_TIP_PREFIX)
+
 # B4: Col is NOT re-exported. All callers must import Col directly from schema.
 from config import INSIGHT_TEMPLATES as _IT, TIP_CORPUS as _TC
 
@@ -460,6 +466,13 @@ def run_startup_checks(env: str | None = None) -> None:
   Rollback: Delete bootstrap.py.
 
 POST-EXECUTION VALIDATION
+[ ] python3 - <<'PY'
+import contracts
+assert hasattr(contracts, "TIP_CORPUS")
+assert hasattr(contracts, "INSIGHT_TEMPLATES")
+assert contracts.lookup_matching_tip_ids("food", "spending_spike") is not None
+print("contracts import and generic-tip helper validation passed")
+PY
 [ ] python3 - <<'PY'
 from contracts import TIP_CORPUS, lookup_matching_tip_ids
 
