@@ -336,10 +336,6 @@ POST-EXECUTION VALIDATION
 [ ] Existing defensive-copy lines for debits, credits, and personal_debits remain in the original **post_init** if already present.
 [ ] New logic covers stats, passion_debits, passion_insights, and passion_signals.
 [ ] `python3 -m py_compile pipeline.py pipeline_result.py passion_models.py` succeeds.
-[ ] Step 6.3 appended block does not include new duplicate copy lines for debits, credits, or personal_debits.
-[ ] Existing defensive-copy lines for debits, credits, and personal_debits remain in the original **post_init** if already present.
-[ ] New logic covers stats, passion_debits, passion_insights, and passion_signals.
-[ ] `python3 -m py_compile pipeline.py pipeline_result.py passion_models.py` succeeds.
 [ ] `passion_models.py` exists.
 [ ] `pipeline_result.py` exists.
 [ ] `PipelineResult` in `pipeline.py` has `kw_only=True`.

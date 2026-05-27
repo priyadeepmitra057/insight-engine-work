@@ -394,7 +394,7 @@ from config import TIP_CORPUS, INSIGHT_TEMPLATES, lookup_matching_tip_ids
   Instruction: Replace the exact import above with:
 
   ```python
-from contracts import TIP_CORPUS, lookup_matching_tip_ids
+from contracts import TIP_CORPUS, INSIGHT_TEMPLATES, lookup_matching_tip_ids
   ```
 
   Then replace the existing `_select_tip` function exactly.
@@ -430,8 +430,11 @@ def _select_tip(category: str, insight_type: str, rng: random.Random) -> str:
 POST-EXECUTION VALIDATION
 [ ] File exists at: banned_content.py
 [ ] File exists at: config_passion.py
-[ ] insight_generator.py imports TIP_CORPUS and lookup_matching_tip_ids from contracts.
+[ ] insight_generator.py imports TIP_CORPUS, INSIGHT_TEMPLATES, and lookup_matching_tip_ids from contracts.
 [ ] insight_generator.py does not import TIP_CORPUS from config.
+[ ] `grep -n "from config import .*INSIGHT_TEMPLATES" insight_generator.py` returns no matches.
+[ ] `python3 -m py_compile insight_generator.py` succeeds.
+[ ] `python3 -c "import insight_generator; print('insight_generator import ok')"` succeeds.
 [ ] insight_generator.py contains no placeholder text like "equivalent rendering logic".
 [ ] python3 -m py_compile insight_generator.py succeeds.
 
