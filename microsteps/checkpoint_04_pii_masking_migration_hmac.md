@@ -244,6 +244,7 @@ from schema import Col
   After:
   ```python
 from log_utils import log_safe_merchant
+from schema import Col
   ```
 
   Rollback: Restore `from hash_utils import stable_hash`.
