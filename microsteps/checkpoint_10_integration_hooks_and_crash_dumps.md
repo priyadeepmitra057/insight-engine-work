@@ -594,10 +594,20 @@ def _attach_passion_results(
 ```
 
   Instruction:
-  Replace the exact full current crash handler block in run_pipeline, beginning at `except Exception:` and ending at that handler's final `raise`, with the new crash handler block below.
-  If the full old handler block is not found exactly once, STOP.
-  Do not infer the edit location.
-  Do not leave any old crash-dump code below the replacement.
+  Find the outer run_pipeline crash handler beginning at the run_pipeline-level:
+
+      except Exception:
+
+  where the first statement is logger.critical(
+      "An unhandled exception crashed the pipeline core execution.",
+      ...
+  )
+
+  Replace from that except Exception line through that handler's final indented raise.
+
+  If more than one matching run_pipeline-level handler is found, STOP.
+  If no matching run_pipeline-level handler is found, STOP.
+  Do not touch run_inference or inner try/except blocks.
 
   After:
   ```python
