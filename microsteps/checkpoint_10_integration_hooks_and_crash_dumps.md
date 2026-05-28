@@ -83,7 +83,7 @@ def _write_crash_dumps(
     passion_insights=(),
     passion_signals=(),
     run_id=None,
-) -> None:
+) -> bool:
     """Safely write crash dump files containing debits, credits, and passion data."""
     import os
     import json
@@ -99,6 +99,7 @@ def _write_crash_dumps(
         run_id = pipeline_run_id_ctx.get() or "unknown"
 
     os.makedirs(crash_dump_dir, exist_ok=True)
+    wrote_any = False
 
     if debits is not None and not isinstance(debits, pd.DataFrame):
         logger.warning(
@@ -154,18 +155,21 @@ def _write_crash_dumps(
 
     # Atomicity Note: Guaranteed on POSIX systems; best-effort on Windows.
     if not safe_debits.empty:
+        wrote_any = True
         tmp_path = os.path.join(crash_dump_dir, f"{run_id}_debits.csv.tmp")
         final_path = os.path.join(crash_dump_dir, f"{run_id}_debits.csv")
         safe_debits.to_csv(tmp_path, index=False)
         os.replace(tmp_path, final_path)
 
     if not safe_credits.empty:
+        wrote_any = True
         tmp_path = os.path.join(crash_dump_dir, f"{run_id}_credits.csv.tmp")
         final_path = os.path.join(crash_dump_dir, f"{run_id}_credits.csv")
         safe_credits.to_csv(tmp_path, index=False)
         os.replace(tmp_path, final_path)
 
     if not safe_passion_debits.empty:
+        wrote_any = True
         tmp_path = os.path.join(crash_dump_dir, f"{run_id}_passion_debits.csv.tmp")
         final_path = os.path.join(crash_dump_dir, f"{run_id}_passion_debits.csv")
         from log_utils import log_safe_merchant
@@ -176,6 +180,7 @@ def _write_crash_dumps(
         os.replace(tmp_path, final_path)
 
     if passion_summary:
+        wrote_any = True
         tmp_path = os.path.join(crash_dump_dir, f"{run_id}_passion_summary.json.tmp")
         final_path = os.path.join(crash_dump_dir, f"{run_id}_passion_summary.json")
 
@@ -198,6 +203,8 @@ def _write_crash_dumps(
         with open(tmp_path, "w") as f:
             json.dump(passion_summary, f, indent=2, default=_json_safe)
         os.replace(tmp_path, final_path)
+
+    return wrote_any
 
 
 def _resolve_passion_crash_fields(result=None, locals_snapshot=None):
@@ -448,6 +455,10 @@ def _attach_passion_results(
   Do not include `except Exception:` in this replacement.
   The outer run_pipeline crash handler is replaced only by STEP [10.5].
 
+  If the live run_pipeline PipelineResult call contains additional keyword arguments, list every one explicitly in the replacement result = PipelineResult(...) call.
+  No placeholders are allowed.
+  Do not drop existing PipelineResult keyword arguments from the live code.
+
 
 
   Rollback: Revert `run_pipeline` end.
@@ -594,10 +605,20 @@ def _attach_passion_results(
 ```
 
   Instruction:
-  Replace the exact full current crash handler block in run_pipeline, beginning at `except Exception:` and ending at that handler's final `raise`, with the new crash handler block below.
-  If the full old handler block is not found exactly once, STOP.
-  Do not infer the edit location.
-  Do not leave any old crash-dump code below the replacement.
+  Find the outer run_pipeline crash handler beginning at the run_pipeline-level:
+
+      except Exception:
+
+  where the first statement is logger.critical(
+      "An unhandled exception crashed the pipeline core execution.",
+      ...
+  )
+
+  Replace from that except Exception line through that handler's final indented raise.
+
+  If more than one matching run_pipeline-level handler is found, STOP.
+  If no matching run_pipeline-level handler is found, STOP.
+  Do not touch run_inference or inner try/except blocks.
 
   After:
   ```python
@@ -616,19 +637,26 @@ def _attach_passion_results(
                     locals_snapshot=_snapshot,
                 )
 
-                _write_crash_dumps(
-                    debits=debits,
-                    credits=credits,
+                _wrote_any = _write_crash_dumps(
+                    debits=_snapshot.get("debits"),
+                    credits=_snapshot.get("credits"),
                     crash_dump_dir=config.CRASH_DUMP_DIR,
                     passion_debits=_passion_debits,
                     passion_insights=_passion_insights,
                     passion_signals=_passion_signals,
-                    run_id=run_id,
+                    run_id=_snapshot.get("run_id"),
                 )
-                logger.info(
-                    "Crash state snapshots written.",
-                    extra={"event_type": "crash_dump_success", "stage": "crash_handler"}
-                )
+
+                if _wrote_any:
+                    logger.info(
+                        "Crash state snapshots written.",
+                        extra={"event_type": "crash_dump_success", "stage": "crash_handler"}
+                    )
+                else:
+                    logger.info(
+                        "No crash data available to persist.",
+                        extra={"event_type": "crash_dump_empty", "stage": "crash_handler"}
+                    )
             except Exception:
                 logger.warning(
                     "Failed to write state dump to CSV during crash handling sequence.",
@@ -646,12 +674,19 @@ def _attach_passion_results(
   [ ] Old inline crash dump writes are gone from run_pipeline.
   [ ] run_pipeline crash handler calls _resolve_passion_crash_fields.
   [ ] run_pipeline crash handler calls _write_crash_dumps.
+[ ] run_pipeline crash handler never references bare `debits`, `credits`, or `run_id` inside the `_write_crash_dumps(...)` call.
+[ ] run_pipeline crash handler logs crash_dump_success only when `_wrote_any` is true.
+[ ] run_pipeline crash handler logs crash_dump_empty when `_wrote_any` is false.
   [ ] python3 -m py_compile pipeline.py succeeds.
 
 POST-EXECUTION VALIDATION
+[ ] `_write_crash_dumps(...)` returns bool.
+[ ] Every successful dump branch sets wrote_any = True.
 [ ] `pipeline.py` contains `_attach_passion_results` and `_write_crash_dumps`.
 [ ] `run_pipeline` calls `_attach_passion_results` and `_write_crash_dumps`.
-[ ] grep -n "# ... existing kwargs ..." pipeline.py returns no matches.
+[ ] The replacement result = PipelineResult(...) in run_pipeline includes every keyword argument present in the live pre-change return PipelineResult(...).
+[ ] `grep -n "# ... existing kwargs ..." pipeline.py` returns no matches.
+[ ] AST validation from CP02 still passes.
 [ ] `run_inference` assigns PipelineResult(...) to result before returning.
 [ ] `run_inference` calls `_attach_passion_results(result)`.
 [ ] python3 -m py_compile pipeline.py succeeds.

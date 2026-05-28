@@ -244,9 +244,16 @@ from schema import Col
   After:
   ```python
 from log_utils import log_safe_merchant
+from schema import Col
   ```
 
-  Rollback: Restore `from hash_utils import stable_hash`.
+  Rollback:
+
+  ```python
+from hash_utils import stable_hash
+
+from schema import Col
+  ```
 
   STEP [4.6]
   File:           tests/test_logging_safety.py
@@ -264,7 +271,7 @@ from log_utils import log_safe_merchant
 ```
   After:
   ```python
-assert any(log_safe_merchant("Netflix") in msg for msg in caplog.messages)
+    assert any(log_safe_merchant("Netflix") in msg for msg in caplog.messages)
   ```
 
   Rollback: Restore assertion using `stable_hash`.
@@ -275,6 +282,9 @@ assert any(log_safe_merchant("Netflix") in msg for msg in caplog.messages)
   pytest tests/test_logging_safety.py
 
 POST-EXECUTION VALIDATION
+[ ] `grep -n "Col\." tests/test_logging_safety.py` is reviewed.
+[ ] If `Col.` appears, `from schema import Col` remains present.
+[ ] `pytest tests/test_logging_safety.py` passes.
 [ ] File exists at: log_utils.py
 [ ] Import resolves: from log_utils import log_safe_merchant
 [ ] `pytest tests/test_logging_safety.py` passes.

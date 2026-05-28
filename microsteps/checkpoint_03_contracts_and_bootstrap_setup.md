@@ -38,6 +38,11 @@ STEPS
   Block ID:       CB-P1-02
   Flags:          [INTERFACE BREAK RISK]
 
+  Before:
+  ```
+  FILE DOES NOT EXIST
+  ```
+
   Instruction: Create `contracts.py` with the provided verbatim content.
 
   After:
@@ -466,6 +471,7 @@ def run_startup_checks(env: str | None = None) -> None:
   Rollback: Delete bootstrap.py.
 
 POST-EXECUTION VALIDATION
+[ ] Confirm CP03 Step 3.1 now has `Before:` with `FILE DOES NOT EXIST`.
 [ ] python3 - <<'PY'
 import contracts
 assert hasattr(contracts, "TIP_CORPUS")

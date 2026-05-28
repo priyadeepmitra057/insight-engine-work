@@ -282,16 +282,9 @@ class PipelineResult:
     passion_signals
     If the current `__post_init__` structure is unclear, STOP.
     ```python
-        # New defensive copy logic:
-        import pandas as pd
-        if hasattr(self, "debits") and isinstance(self.debits, pd.DataFrame):
-            object.__setattr__(self, "debits", self.debits.copy(deep=True))
-        if hasattr(self, "credits") and isinstance(self.credits, pd.DataFrame):
-            object.__setattr__(self, "credits", self.credits.copy(deep=True))
-        if hasattr(self, "personal_debits") and isinstance(self.personal_debits, pd.DataFrame):
-            object.__setattr__(self, "personal_debits", self.personal_debits.copy(deep=True))
         if hasattr(self, "passion_debits") and isinstance(self.passion_debits, pd.DataFrame):
             object.__setattr__(self, "passion_debits", self.passion_debits.copy(deep=True))
+
         if hasattr(self, "stats") and isinstance(self.stats, dict):
             # FIX-5: Validate that all stats dictionary keys and values are scalars to prevent deep nested mutation.
             import numpy as np
@@ -328,6 +321,7 @@ class PipelineResult:
                     f"(have category, spend_share, is_suppressed, merchant_list), "
                     f"got {type(s)}"
                 )
+
         for t in self.passion_insights:
             if not isinstance(t, str):
                 raise TypeError(f"passion_insights must contain str, got {type(t)}")
@@ -338,6 +332,10 @@ class PipelineResult:
   Rollback: Restore original `PipelineResult` class.
 
 POST-EXECUTION VALIDATION
+[ ] Step 6.3 appended block does not include new duplicate copy lines for debits, credits, or personal_debits.
+[ ] Existing defensive-copy lines for debits, credits, and personal_debits remain in the original **post_init** if already present.
+[ ] New logic covers stats, passion_debits, passion_insights, and passion_signals.
+[ ] `python3 -m py_compile pipeline.py pipeline_result.py passion_models.py` succeeds.
 [ ] `passion_models.py` exists.
 [ ] `pipeline_result.py` exists.
 [ ] `PipelineResult` in `pipeline.py` has `kw_only=True`.
